@@ -38,6 +38,7 @@ let viewerConfigDirty = false;
 let viewerApplyInFlight = false;
 let driveHoldTimer = null;
 let activeDriveDirection = "stop";
+let activeSteerDirection = "stop";
 let servoHoldTimer = null;
 let servoGroupHoldTimer = null;
 let activeServoDirection = "stop";
@@ -244,14 +245,27 @@ async function sendDrive(direction) {
   }).then(renderState);
 }
 
+async function sendSteer(direction) {
+  return postJson("/api/servo-group", {
+    targets: [1, 2],
+    direction,
+  }).then(renderState);
+}
+
 function stopDriveHold() {
   if (driveHoldTimer) {
     clearInterval(driveHoldTimer);
     driveHoldTimer = null;
   }
-  if (activeDriveDirection !== "stop") {
-    activeDriveDirection = "stop";
+  const shouldStopDrive = activeDriveDirection !== "stop";
+  const shouldCenterSteer = activeSteerDirection !== "stop";
+  activeDriveDirection = "stop";
+  activeSteerDirection = "stop";
+  if (shouldStopDrive) {
     postJson("/api/stop", {}).then(renderState).catch(console.error);
+  }
+  if (shouldCenterSteer) {
+    sendSteer("center").catch(console.error);
   }
 }
 
@@ -261,15 +275,23 @@ function startDriveHold(direction) {
     postJson("/api/stop", {}).then(renderState).catch(console.error);
     return;
   }
+  const isSteeringDirection = direction === "left" || direction === "right";
   if (activeDriveDirection === direction) {
     return;
   }
   stopDriveHold();
   activeDriveDirection = direction;
-  sendDrive(direction).catch(console.error);
-  driveHoldTimer = setInterval(() => {
+  activeSteerDirection = isSteeringDirection ? direction : "stop";
+  const tick = () => {
+    if (isSteeringDirection) {
+      sendDrive("forward").catch(console.error);
+      sendSteer(direction).catch(console.error);
+      return;
+    }
     sendDrive(direction).catch(console.error);
-  }, 100);
+  };
+  tick();
+  driveHoldTimer = setInterval(tick, 100);
 }
 
 function bindDriveHold(button, direction) {
