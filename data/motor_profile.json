@@ -1,0 +1,12 @@
+{
+  "max_linear_mps": 0.12,
+  "max_angular_rps": 0.9,
+  "max_pwm": 180,
+  "ramp_step": 12,
+  "left_min_pwm": 70,
+  "right_min_pwm": 70,
+  "left_gain": 1.0,
+  "right_gain": 1.0,
+  "track_width_m": 0.14,
+  "default_servo_angle": 90
+}

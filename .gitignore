@@ -1,0 +1,28 @@
+# Virtual environments
+venv/
+.venv/
+
+# Local runtime config
+.env
+
+# Python cache / test cache
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# Editor files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

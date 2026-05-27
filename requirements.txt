@@ -1,0 +1,11 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pyserial==3.5
+numpy==2.1.1
+opencv-python==4.10.0.84
+pyrealsense2==2.57.7.10387
+pydantic==2.9.2
+python-multipart==0.0.9
+pytest==8.3.3
+Pillow==10.4.0
+ultralytics==8.3.30

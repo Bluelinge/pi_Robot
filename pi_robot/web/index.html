@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Visual Car Console</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Raspberry Pi + ESP32 + D435i</p>
+        <h1>视觉小车控制台</h1>
+        <p class="summary">在一个页面里看画面、看深度、控四驱、控舵机，并观察树莓派与 ESP32 的串口状态。</p>
+      </div>
+      <div class="hero-status">
+        <div id="cameraBadge" class="badge">Camera: checking</div>
+        <div id="espBadge" class="badge badge-secondary">ESP32: checking</div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="card video-card">
+        <div class="card-title">
+          <h2>实时画面</h2>
+          <span id="modeBadge" class="mode-pill">IDLE</span>
+        </div>
+        <div class="toolbar">
+          <button class="active" data-view="color">彩色</button>
+          <button data-view="depth">深度伪彩色</button>
+          <button data-view="split">同时查看</button>
+        </div>
+        <div id="singleView">
+          <div class="overlay-wrap">
+            <img id="stream" src="/stream.mjpg" alt="camera stream" />
+            <canvas id="overlayCanvas"></canvas>
+          </div>
+        </div>
+        <div id="splitView" class="split-grid" hidden>
+          <div>
+            <p class="label">彩色</p>
+            <img id="colorStream" src="/stream.mjpg" alt="color stream" />
+          </div>
+          <div>
+            <p class="label">深度</p>
+            <img id="depthStream" src="/stream_depth.mjpg" alt="depth stream" />
+          </div>
+        </div>
+        <div class="toolbar">
+          <select id="resolutionSelect"></select>
+          <select id="fpsSelect"></select>
+          <button id="applyConfigBtn">应用画面参数</button>
+        </div>
+        <div class="toolbar">
+          <button id="startFollowBtn" class="warning">开始跟随</button>
+          <button id="stopFollowBtn">停止跟随</button>
+          <span id="followHint" class="label">先在彩色画面上拖出一个目标框</span>
+        </div>
+      </article>
+
+      <article class="card side-card">
+        <h2>状态面板</h2>
+        <div class="stats">
+          <div class="stat"><span class="label">相机</span><strong id="cameraStatus">checking...</strong></div>
+          <div class="stat"><span class="label">ESP32</span><strong id="espStatus">checking...</strong></div>
+          <div class="stat"><span class="label">串口</span><strong id="serialPort">-</strong></div>
+          <div class="stat"><span class="label">分辨率</span><strong id="resolutionText">-</strong></div>
+          <div class="stat"><span class="label">帧率</span><strong id="fpsText">-</strong></div>
+          <div class="stat"><span class="label">速度</span><strong id="speedText">0%</strong></div>
+          <div class="stat"><span class="label">控制来源</span><strong id="controlSource">none</strong></div>
+          <div class="stat"><span class="label">点击距离</span><strong id="depthAt">click image</strong></div>
+          <div class="stat"><span class="label">目标状态</span><strong id="trackingStatus">idle</strong></div>
+          <div class="stat"><span class="label">目标距离</span><strong id="trackingDistance">-</strong></div>
+          <div class="stat"><span class="label">故障</span><strong id="lastError" class="danger-text">none</strong></div>
+        </div>
+        <pre id="telemetryBox"></pre>
+      </article>
+    </section>
+
+    <section class="controls-grid">
+      <article class="card">
+        <h2>模式与急停</h2>
+        <div class="button-row">
+          <button data-mode="IDLE">IDLE</button>
+          <button data-mode="MANUAL">MANUAL</button>
+          <button data-mode="AUTO">AUTO</button>
+          <button data-mode="CALIBRATING">CALIBRATE</button>
+        </div>
+        <div class="button-row">
+          <button id="stopBtn" class="warning">STOP</button>
+          <button id="estopBtn" class="danger">急停</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>四驱控制</h2>
+        <div class="pad">
+          <button data-drive="forward">前进</button>
+          <div class="pad-row">
+            <button data-drive="left">左转</button>
+            <button data-drive="stop">停止</button>
+            <button data-drive="right">右转</button>
+          </div>
+          <button data-drive="reverse">后退</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>速度设置</h2>
+        <div class="speed-panel">
+          <input id="speedSlider" type="range" min="0" max="100" value="80" />
+          <strong id="speedSliderValue">80%</strong>
+        </div>
+        <div class="button-row">
+          <button id="applySpeedBtn">应用速度</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>单舵机控制</h2>
+        <div class="toolbar">
+          <select id="servoIdSelect">
+            <option value="1">舵机 1</option>
+            <option value="2">舵机 2</option>
+            <option value="3">舵机 3</option>
+            <option value="4">舵机 4</option>
+          </select>
+        </div>
+        <div class="button-row">
+          <button data-servo="left">左转</button>
+          <button data-servo="center">回中</button>
+          <button data-servo="right">右转</button>
+          <button data-servo="stop">停止</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>舵机组控制</h2>
+        <div class="check-row">
+          <label><input type="checkbox" class="servo-target" value="1" checked /> 1</label>
+          <label><input type="checkbox" class="servo-target" value="2" checked /> 2</label>
+          <label><input type="checkbox" class="servo-target" value="3" checked /> 3</label>
+          <label><input type="checkbox" class="servo-target" value="4" checked /> 4</label>
+        </div>
+        <div class="button-row">
+          <button data-servo-group="left">组选左转</button>
+          <button data-servo-group="center">组选回中</button>
+          <button data-servo-group="right">组选右转</button>
+          <button data-servo-group="stop">组选停止</button>
+        </div>
+      </article>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>
